@@ -1,0 +1,24 @@
+usage: serial_plotter_terminal_v3.py [-h] --port PORT [--baud BAUD] [--window WINDOW] [--max-series MAX_SERIES] [--prefix PREFIX] [--ylim-auto | --no-ylim-auto] [--quick-file QUICK_FILE]
+
+Serial Plotter (prefix-filtered) + Serial Terminal (non-plot lines only + input + quick send).
+
+options:
+  -h, --help            show this help message and exit
+  --port PORT           Serial port (e.g., /dev/ttyACM0 or COM5)
+  --baud BAUD           Baud rate (default: 115200)
+  --window WINDOW       Plot window seconds (default: 10)
+  --max-series MAX_SERIES
+                        Max series (default: 16)
+  --prefix PREFIX       Plot only lines starting with this prefix (default: "@")
+  --ylim-auto, --no-ylim-auto
+                        Auto-scale Y continuously (default: on). Use --no-ylim-auto to disable.
+  --quick-file QUICK_FILE
+                        JSON file used to store quick commands (default: serial_plotter_terminal.quick.json)
+
+
+cd ~/Documents/Projects/documents/FreeCAD1.0/SixDOF_arm_V7/firmware
+source venv/bin/activate
+python serial_plotter_terminal_2.py --port /dev/ttyACM0 --baud 115200 --window 30
+
+minicom -b 115200 -D /dev/ttyUSB0
+minicom -b 115200 -D /dev/ttyACM0

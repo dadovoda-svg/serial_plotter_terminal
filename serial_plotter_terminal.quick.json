@@ -1,0 +1,9 @@
+{
+  "quick": [
+    "G1  J1=0.0 J2=-90.0 J3=0.0 J4=0.0 j5=0 J6=0.0 V=20 ; alza il braccio verticale",
+    "G1 J1=0.0 J2=-90.0 J3=0.0 J4=-90.0 J5=90.0 J6=0.0 V=20 ; ripiegato",
+    "G1  J1=0.0 J2=0.0 J3=0.0 J4=-45.0 j5=45 J6=0.0 V=20 ; alza il braccio mezzo",
+    "g1 j6=20  V=15",
+    "G1  J1=45.0 J2=-40.831 J3=0.0 J4=-35.104 j5=-14.065 J6=0.0 V=20 ; alza il braccio mezzo"
+  ]
+}
