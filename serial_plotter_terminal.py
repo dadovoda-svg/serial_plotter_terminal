@@ -240,8 +240,9 @@ class App:
         self.paused_started_at = None
 
         # Data
-        self.series = {}    # name -> (deque_t, deque_y)
-        self.lines = {}     # name -> matplotlib line2D
+        self.series = {}       # name -> (deque_t, deque_y)
+        self.lines = {}        # name -> matplotlib line2D
+        self.last_values = {}  # name -> latest received value
 
         # UI
         self.quick_entries = []
@@ -395,6 +396,11 @@ class App:
     def _now_rel(self):
         return time.time() - self.t0 - self.paused_total
 
+    def _legend_label(self, name: str) -> str:
+        if name not in self.last_values:
+            return name
+        return f"{name}: {self.last_values[name]:.3f}"
+
     def _ensure_series(self, name: str):
         if name in self.series:
             return
@@ -402,7 +408,7 @@ class App:
             return
 
         self.series[name] = (deque(), deque())
-        (ln,) = self.ax.plot([], [], label=name)
+        (ln,) = self.ax.plot([], [], label=self._legend_label(name))
         self.lines[name] = ln
         self.ax.legend(loc="upper left")
 
@@ -435,6 +441,10 @@ class App:
     def _redraw_plot(self):
         for name, (dq_t, dq_y) in self.series.items():
             self.lines[name].set_data(list(dq_t), list(dq_y))
+            self.lines[name].set_label(self._legend_label(name))
+
+        if self.lines:
+            self.ax.legend(loc="upper left")
 
         rel_t = self._now_rel()
         self.ax.set_xlim(max(0.0, rel_t - self.window_s), max(self.window_s, rel_t))
@@ -526,6 +536,7 @@ class App:
                         dq_t, dq_y = self.series[name]
                         dq_t.append(rel_t)
                         dq_y.append(val)
+                        self.last_values[name] = val
                         changed_plot = True
                 else:
                     self._append_terminal(line)
