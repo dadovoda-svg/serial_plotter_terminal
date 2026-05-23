@@ -20,6 +20,8 @@ cd ~/Documents/Projects/documents/FreeCAD1.0/SixDOF_arm_V7/firmware
 source venv/bin/activate
 python serial_plotter_terminal.py --port /dev/ttyACM0 --baud 115200 --window 30
 
+
+cd ~/Documents/Projects/documents/FreeCAD1.0/SixDOF_arm_V7/firmware/Tools/serial_plotter_terminal
 source venv/bin/activate
 python serial_plotter_terminal.py --port /dev/ttyACM0 --baud 115200 --window 60 --quick-file ./planetJoint.json
 

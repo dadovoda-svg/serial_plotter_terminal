@@ -468,13 +468,33 @@ class App:
         self.plot_running = True
 
     def _on_clear(self):
-        for dq_t, dq_y in self.series.values():
-            dq_t.clear()
-            dq_y.clear()
+        # Return the plot area to a clean startup-like state.
+        # Do not just clear the buffers: remove the existing Line2D objects and
+        # reset the per-series state as well, otherwise the legend keeps stale
+        # labels such as "name: last_value".
+        for ln in self.lines.values():
+            try:
+                ln.remove()
+            except ValueError:
+                # Already detached from the axes; harmless.
+                pass
+
+        self.series.clear()
+        self.lines.clear()
+        self.last_values.clear()
+
+        legend = self.ax.get_legend()
+        if legend is not None:
+            legend.remove()
+
         self.t0 = time.time()
         self.paused_total = 0.0
         self.paused_started_at = None
-        self._redraw_plot()
+
+        # Restore the same empty axes feel as at application startup.
+        self.ax.set_xlim(0.0, self.window_s)
+        self.ax.set_ylim(0.0, 1.0)
+        self.canvas.draw_idle()
 
     # --- Main entry send ---
     def _on_enter(self, _evt):
