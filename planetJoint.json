@@ -1,9 +1,9 @@
 {
   "quick": [
     "stop",
-    "pos 0",
-    "pos 45",
-    "pos -45",
-    "calstdeg -45"
+    "go -2",
+    "moveb -70 18 5",
+    "moveb -90 18 5",
+    "moveb 0 12 10"
   ]
 }

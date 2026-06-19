@@ -28,3 +28,6 @@ python serial_plotter_terminal.py --port /dev/ttyACM0 --baud 115200 --window 60 
 
 minicom -b 115200 -D /dev/ttyUSB0
 minicom -b 115200 -D /dev/ttyACM0
+
+Giunto a zero gradi 177.5 encoder
+Giunto a 60 gradi 121.7 encoder
