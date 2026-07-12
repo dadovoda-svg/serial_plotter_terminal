@@ -60,10 +60,10 @@ def parse_line(line: str):
 
 class QuickStore:
     """
-    Simple persistence for the 5 quick commands.
+    Simple persistence for the quick commands.
     Stored as JSON.
     """
-    def __init__(self, path: Path, slots: int = 5):
+    def __init__(self, path: Path, slots: int = 10):
         self.path = path
         self.slots = slots
 
@@ -349,23 +349,28 @@ class App:
         self.entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
         self.entry.bind("<Return>", self._on_enter)
 
-        # Quick-send rows (5)
+        # Quick-send commands: 10 slots arranged as two columns of five.
         quick_frame = ttk.LabelFrame(bottom, text="Quick Send", padding=6)
         quick_frame.pack(side=tk.TOP, fill=tk.X, pady=(6, 0))
-        quick_frame.columnconfigure(0, weight=1)
+        quick_frame.columnconfigure(0, weight=19, uniform="quick_columns")
+        quick_frame.columnconfigure(1, weight=2)
+        quick_frame.columnconfigure(2, weight=19, uniform="quick_columns")
 
-        for i in range(5):
+        for i in range(10):
+            grid_row = i % 5
+            grid_column = 0 if i < 5 else 2
+
             row = ttk.Frame(quick_frame)
-            row.grid(row=i, column=0, sticky="ew", pady=2)
-            row.columnconfigure(0, weight=1)
-
-            e = ttk.Entry(row)
-            e.grid(row=0, column=0, sticky="ew")
-            e.bind("<KeyRelease>", self._on_quick_modified)
+            row.grid(row=grid_row, column=grid_column, sticky="ew", pady=2)
+            row.columnconfigure(1, weight=1)
 
             b = ttk.Button(row, text=f"Send {i+1}", command=lambda idx=i: self._on_quick_send(idx))
-            b.grid(row=0, column=1, padx=(6, 0))
+            b.grid(row=0, column=0, padx=(0, 6))
 
+            e = ttk.Entry(row)
+            e.grid(row=0, column=1, sticky="ew")
+            e.bind("<KeyRelease>", self._on_quick_modified)
+            e.bind("<Return>", lambda _evt, idx=i: self._on_quick_send(idx))
             e.bind("<Control-Return>", lambda _evt, idx=i: self._on_quick_send(idx))
             self.quick_entries.append(e)
 
@@ -664,7 +669,7 @@ if __name__ == "__main__":
     )
     sio.start()
 
-    store = QuickStore(Path(args.quick_file), slots=5)
+    store = QuickStore(Path(args.quick_file), slots=10)
 
     root = tk.Tk()
     try:

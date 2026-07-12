@@ -4,7 +4,7 @@ A small Python desktop tool that combines three things in two coordinated window
 
 - a **serial terminal**
 - a **live serial plotter**
-- a set of **5 persistent quick-send commands**
+- a set of **10 persistent quick-send commands**
 
 It is designed for debugging and monitoring embedded devices that send both:
 
@@ -38,8 +38,9 @@ This README was prepared from the actual script behavior and command-line option
   - if the cable is unplugged during runtime, the app goes offline and reconnects when the port comes back
 
 - **Quick Send panel**
-  - 5 editable command slots
+  - 10 editable command slots arranged in two columns
   - each command has its own send button
+  - pressing Enter in a field sends that field's command
   - commands are saved to a JSON file and restored on startup
 
 - **Start / Stop / Clear / Export PNG plot controls**
