@@ -1,6 +1,6 @@
 # Serial Plotter + Terminal
 
-A small Python desktop tool that combines three things in a single window:
+A small Python desktop tool that combines three things in two coordinated windows:
 
 - a **serial terminal**
 - a **live serial plotter**
@@ -26,6 +26,8 @@ This README was prepared from the actual script behavior and command-line option
   - supports local echo for sent commands
 
 - **Live plotter**
+  - opens in a separate, resizable window
+  - expands to use all the space not occupied by its Start / Stop / Clear controls
   - plots only lines that start with a configurable prefix
   - supports labeled key/value pairs and plain numeric lists
   - keeps a rolling time window
@@ -40,9 +42,11 @@ This README was prepared from the actual script behavior and command-line option
   - each command has its own send button
   - commands are saved to a JSON file and restored on startup
 
-- **Start / Stop / Clear plot controls**
+- **Start / Stop / Clear / Export PNG plot controls**
+  - are located in the plot window
   - stop pauses plotting without closing the serial connection
   - clear resets the plotted data and time base
+  - PNG export remembers the last selected directory in the quick-command JSON file
 
 ---
 

@@ -12,7 +12,7 @@ from pathlib import Path
 import serial  # pip install pyserial
 
 import tkinter as tk
-from tkinter import ttk
+from tkinter import filedialog, ttk
 
 import matplotlib
 matplotlib.use("TkAgg")
@@ -67,26 +67,35 @@ class QuickStore:
         self.path = path
         self.slots = slots
 
-    def load(self):
+    def _read(self):
         if not self.path.exists():
-            return [""] * self.slots
+            return {}
         try:
             data = json.loads(self.path.read_text(encoding="utf-8"))
-            if isinstance(data, dict) and "quick" in data and isinstance(data["quick"], list):
-                lst = [str(x) for x in data["quick"][: self.slots]]
-            elif isinstance(data, list):
-                lst = [str(x) for x in data[: self.slots]]
-            else:
-                lst = []
-            lst += [""] * (self.slots - len(lst))
-            return lst
+            if isinstance(data, dict):
+                return data
+            if isinstance(data, list):
+                # Compatibility with the original list-only file format.
+                return {"quick": data}
         except Exception:
-            return [""] * self.slots
+            pass
+        return {}
 
-    def save(self, values):
+    def load(self):
+        data = self._read()
+        quick = data.get("quick", [])
+        lst = [str(x) for x in quick[: self.slots]] if isinstance(quick, list) else []
+        lst += [""] * (self.slots - len(lst))
+        return lst
+
+    def load_export_dir(self):
+        export_dir = self._read().get("export_dir", "")
+        return str(export_dir) if export_dir else ""
+
+    def save(self, values, export_dir=""):
         values = list(values)[: self.slots]
         values += [""] * (self.slots - len(values))
-        payload = {"quick": values}
+        payload = {"quick": values, "export_dir": str(export_dir)}
         tmp = self.path.with_suffix(self.path.suffix + ".tmp")
         tmp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
         os.replace(tmp, self.path)
@@ -246,6 +255,7 @@ class App:
 
         # UI
         self.quick_entries = []
+        self.export_dir = self.store.load_export_dir()
         self._save_after_id = None
         self._build_ui()
         self._load_quick_commands()
@@ -260,19 +270,11 @@ class App:
         self.root.protocol("WM_DELETE_WINDOW", self._on_close)
 
     def _build_ui(self):
-        self.root.title("Serial Plotter + Terminal")
+        self.root.title("Serial Terminal")
 
-        # Top: toolbar
+        # Top: serial connection status
         top = ttk.Frame(self.root, padding=6)
         top.pack(side=tk.TOP, fill=tk.X)
-
-        self.btn_start = ttk.Button(top, text="Start", command=self._on_start)
-        self.btn_stop = ttk.Button(top, text="Stop", command=self._on_stop)
-        self.btn_clear = ttk.Button(top, text="Clear", command=self._on_clear)
-
-        self.btn_start.pack(side=tk.LEFT, padx=(0, 6))
-        self.btn_stop.pack(side=tk.LEFT, padx=(0, 6))
-        self.btn_clear.pack(side=tk.LEFT, padx=(0, 12))
 
         # Status text + semaphore
         self.status = ttk.Label(top, text="OFFLINE")
@@ -282,23 +284,49 @@ class App:
         self.sema.pack(side=tk.LEFT, padx=(8, 0))
         self._sema_circle = self.sema.create_oval(3, 3, 15, 15, outline="", fill="red")
 
-        # Middle: plot
-        mid = ttk.Frame(self.root, padding=(6, 0, 6, 6))
-        mid.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+        # Separate, resizable plot window. The controls stay with the plot while
+        # the canvas consumes all remaining available space.
+        self.plot_window = tk.Toplevel(self.root)
+        self.plot_window.title("Serial Plotter")
+        self.plot_window.protocol("WM_DELETE_WINDOW", self._on_close)
 
-        self.fig = Figure(figsize=(8, 4), dpi=100)
+        plot_controls = ttk.Frame(self.plot_window, padding=3)
+        plot_controls.pack(side=tk.TOP, fill=tk.X)
+
+        self.btn_start = ttk.Button(plot_controls, text="Start", command=self._on_start)
+        self.btn_stop = ttk.Button(plot_controls, text="Stop", command=self._on_stop)
+        self.btn_clear = ttk.Button(plot_controls, text="Clear", command=self._on_clear)
+        self.btn_export = ttk.Button(plot_controls, text="Export PNG", command=self._on_export_png)
+
+        self.btn_start.pack(side=tk.LEFT, padx=(0, 6))
+        self.btn_stop.pack(side=tk.LEFT, padx=(0, 6))
+        self.btn_clear.pack(side=tk.LEFT, padx=(0, 6))
+        self.btn_export.pack(side=tk.LEFT)
+
+        plot_frame = ttk.Frame(self.plot_window, padding=0)
+        plot_frame.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+
+        self.fig = Figure(figsize=(8, 4), dpi=100, constrained_layout=True)
+        self.fig.set_constrained_layout_pads(
+            w_pad=2 / 72,
+            h_pad=2 / 72,
+            wspace=0,
+            hspace=0,
+        )
         self.ax = self.fig.add_subplot(111)
         self.ax.set_xlabel("Time (s)")
         self.ax.set_ylabel("Value")
         self.ax.grid(True)
 
-        self.canvas = FigureCanvasTkAgg(self.fig, master=mid)
+        self.canvas = FigureCanvasTkAgg(self.fig, master=plot_frame)
         self.canvas_widget = self.canvas.get_tk_widget()
         self.canvas_widget.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
-        # Bottom: terminal + input + quick buttons
-        bottom = ttk.Frame(self.root, padding=6)
-        bottom.pack(side=tk.BOTTOM, fill=tk.BOTH)
+        # Main content: terminal + input + quick buttons. With the plot moved to
+        # its own window, this frame and the log take all remaining main-window
+        # space.
+        bottom = ttk.Frame(self.root, padding=(6, 0, 6, 6))
+        bottom.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
         # Terminal
         term_frame = ttk.Frame(bottom)
@@ -375,7 +403,7 @@ class App:
 
     def _save_quick_commands(self):
         values = [e.get() for e in self.quick_entries]
-        self.store.save(values)
+        self.store.save(values, self.export_dir)
 
     def _on_quick_modified(self, _evt=None):
         if self._save_after_id is not None:
@@ -495,6 +523,29 @@ class App:
         self.ax.set_xlim(0.0, self.window_s)
         self.ax.set_ylim(0.0, 1.0)
         self.canvas.draw_idle()
+
+    def _on_export_png(self):
+        initial_dir = self.export_dir if os.path.isdir(self.export_dir) else None
+        filename = filedialog.asksaveasfilename(
+            parent=self.plot_window,
+            title="Export plot as PNG",
+            initialdir=initial_dir,
+            initialfile="serial_plot.png",
+            defaultextension=".png",
+            filetypes=[("PNG image", "*.png")],
+        )
+        if not filename:
+            return
+
+        try:
+            self.fig.savefig(filename, format="png", bbox_inches="tight", pad_inches=0.03)
+        except Exception as exc:
+            self._append_terminal(f"[export error] {exc}")
+            return
+
+        self.export_dir = str(Path(filename).parent)
+        self._save_quick_commands()
+        self._append_terminal(f"[plot exported] {filename}")
 
     # --- Main entry send ---
     def _on_enter(self, _evt):

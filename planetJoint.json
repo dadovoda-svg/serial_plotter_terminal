@@ -1,9 +1,10 @@
 {
   "quick": [
-    "stop",
-    "go -2",
-    "moveb -70 18 5",
-    "moveb -90 18 5",
-    "moveb 0 12 10"
-  ]
+    "go 0.2",
+    "move 90 180 200 ",
+    "move -90 180 200",
+    "moveb 0 180 180",
+    "moveb 90 15 10"
+  ],
+  "export_dir": "/home/davide/Documents/Projects/documents/FreeCAD1.0/SixDOF_arm_V7/docs/images"
 }
