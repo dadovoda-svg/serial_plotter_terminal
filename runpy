@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+
+# Directory in cui si trova questo script
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+VENV_DIR="$SCRIPT_DIR/.venv"
+
+# Verifica che sia stato specificato lo script Python
+if [ $# -lt 1 ]; then
+    echo "Uso: $0 <script.py> [argomenti...]"
+    exit 1
+fi
+
+PYTHON_SCRIPT="$1"
+shift
+
+# Verifica se è già attivo un virtual environment
+if [ -z "${VIRTUAL_ENV:-}" ]; then
+    echo "Nessun virtual environment attivo."
+
+    if [ ! -f "$VENV_DIR/bin/activate" ]; then
+        echo "ERRORE: virtual environment non trovato in: $VENV_DIR"
+        exit 1
+    fi
+
+    echo "Attivazione di $VENV_DIR"
+    source "$VENV_DIR/bin/activate"
+else
+    echo "Virtual environment già attivo: $VIRTUAL_ENV"
+fi
+
+# Esegue lo script Python
+exec python "$PYTHON_SCRIPT" "$@"
+

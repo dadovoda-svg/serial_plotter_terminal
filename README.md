@@ -19,6 +19,12 @@ This README was prepared from the actual script behavior and command-line option
 
 ---
 
+## Startup
+```
+source .venv/bin/activate
+python serial_plotter_terminal.py --port /dev/ttyACM0 --baud 115200 --window 60 --quick-file planetJoint.json 
+```
+
 ## Features
 
 - **Serial terminal view**
